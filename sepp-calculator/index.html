@@ -13,20 +13,26 @@
             <p>Compare retirement paths and forecast your global journey.</p>
         </header>
 
+        <div class="card intro-card">
+            <h2>About the 72(t) Rule</h2>
+            <p>The <strong>IRS 72(t) rule</strong> allows you to take penalty-free early withdrawals from your IRA or 401(k) by establishing <strong>Substantially Equal Periodic Payments (SEPP)</strong>. You avoid the 10% penalty, but payments must continue for five years or until you reach age 59½, whichever is longer.</p>
+            <p><a href="https://www.irs.gov/retirement-plans/substantially-equal-periodic-payments" target="_blank" class="irs-link">Official IRS SEPP Guidance →</a></p>
+        </div>
+
         <div class="dashboard">
             <aside class="sidebar">
                 <section class="card">
                     <h2>Core Financials</h2>
                     <div class="input-group">
                         <label for="balance">401(k) Balance ($)</label>
-                        <input type="number" id="balance" placeholder="500000">
+                        <input type="number" id="balance"  placeholder="500000">
                     </div>
                     <div class="input-group">
                         <label for="age">Current Age</label>
                         <input type="number" id="age" placeholder="40">
                     </div>
                     <div class="input-group">
-                        <label for="status">US Residency Status</label>
+                        <label for="status">Residency Status</label>
                         <select id="status">
                             <option value="citizen">US Citizen / Resident</option>
                             <option value="nra" selected>Non-Resident Alien (NRA)</option>
@@ -37,7 +43,7 @@
                         <input type="text" id="state-name" placeholder="e.g. California">
                     </div>
                     <div class="input-group" id="state-tax-group">
-                        <label for="state-tax">State Tax Rate (%)</label>
+                        <label for="state-tax" id="state-tax-label">State Tax Rate (%)</label>
                         <input type="number" id="state-tax" value="5" step="0.1">
                     </div>
                     <div class="input-group">
@@ -50,12 +56,12 @@
                         </select>
                     </div>
 
-                    <h2 style="font-size: 1rem; margin-top: 20px;">Adventure Assumptions</h2>
+                    <h2 style="font-size: 1rem; margin-top: 20px;">Assumptions</h2>
                     <div class="input-grid">
                         <div class="input-group"><label>Growth %</label><input type="number" id="growth-rate" value="7"></div>
                         <div class="input-group"><label>Currency</label><input type="text" id="currency-symbol" value="₹"></div>
                         <div class="input-group"><label>Exchangerate</label><input type="number" id="base-exchange" value="84.00"></div>
-                        <div class="input-group"><label>Devaluation %</label><input type="number" id="devaluation-rate" value="2"></div>
+                        <div class="input-group"><label>Devalauationrate %</label><input type="number" id="devaluation-rate" value="2"></div>
                     </div>
                     <button type="button" id="btn-calculate" class="btn-calculate">Update Everything</button>
                 </section>
@@ -65,23 +71,43 @@
                 <div class="results-grid">
                     <div class="card result-card highlight">
                         <h3>Annual SEPP Payment</h3>
-                        <p id="sepp-amount" class="value">$0.00</p>
-                        <span class="label">Amortization (5% Floor)</span>
+                        <p id="sepp-amount" class="hero-value">$0</p>
+                        <span class="sub-label">Amortization (5% Floor)</span>
                     </div>
                     
                     <div class="card summary-card">
                         <h3>SEPP Summary (to Age 59.5)</h3>
                         <div class="stat"><span>Total Withdrawn:</span> <span id="total-sepp-withdrawn" class="stat-value">$0</span></div>
                         <div class="stat"><span>Total Taxes Paid:</span> <span id="total-sepp-taxes" class="stat-value text-danger">$0</span></div>
-                        <div class="stat"><span>Net Withdrawn:</span> <span id="net-sepp-withdrawn" class="stat-value text-success">$0</span></div> <div class="stat"><span>Ending Balance:</span> <span id="final-sepp-balance" class="stat-value text-success">$0</span></div>
-                        <div class="stat"><span>Penalty Saved:</span> <span id="summary-penalty-saved" class="stat-value text-success">$0</span></div>
+                        <div class="stat"><span>Net Withdrawn:</span> <span id="net-sepp-withdrawn" class="stat-value text-success">$0</span></div>
+                        <div class="stat"><span>Ending Balance:</span> <span id="final-sepp-balance" class="stat-value text-success">$0</span></div>
                     </div>
 
                     <div class="card summary-card danger-border">
-                        <h3>Lump Sum (1040-NR NRA)</h3>
+                        <h3>Lump Sum (Immediate)</h3>
                         <div class="stat"><span>10% Penalty:</span> <span id="lump-sum-penalty" class="stat-value text-danger">$0</span></div>
                         <div class="stat"><span>Taxes (<span id="tax-percent-display">0</span>%):</span> <span id="lump-sum-taxes" class="stat-value text-danger">$0</span></div>
                         <div class="stat"><span>Final Net:</span> <span id="lump-sum-final-net" class="stat-value">$0</span></div>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <h2>Wealth Comparison: Spendable Cash</h2>
+                    <div class="comparison-container">
+                        <div class="bar-group">
+                            <div class="bar-label">Lump Sum Net (Immediate Cash Out)</div>
+                            <div class="bar-wrapper">
+                                <div id="bar-lump" class="bar danger-bg" style="width: 0%"></div>
+                                <span id="bar-lump-val" class="bar-value">$0</span>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar-label">SEPP Net Withdrawn (Total Received over Plan)</div>
+                            <div class="bar-wrapper">
+                                <div id="bar-sepp" class="bar success-bg" style="width: 0%"></div>
+                                <span id="bar-sepp-val" class="bar-value">$0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

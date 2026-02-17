@@ -5,25 +5,19 @@ function calculatePMT(rate, nper, pv) {
     return (rate * pv) / (1 - Math.pow(1 + rate, -nper));
 }
 
-// NEW: Update defaults based on destination
 function updateDestinationDefaults() {
     const country = document.getElementById('country').value;
-    const symbolInput = document.getElementById('currency-symbol');
-    const exchangeInput = document.getElementById('base-exchange');
-    const devalInput = document.getElementById('devaluation-rate');
-
     const defaults = {
         "India": { sym: "₹", exch: 84.00, deval: 2 },
         "Singapore": { sym: "S$", exch: 1.34, deval: 0 },
         "Dubai": { sym: "AED", exch: 3.67, deval: 0 },
-        "UK": { sym: "£", exch: 0.79, deval: -1 } // Negative for appreciation
+        "UK": { sym: "£", exch: 0.79, deval: -1 }
     };
-
     const data = defaults[country];
     if (data) {
-        symbolInput.value = data.sym;
-        exchangeInput.value = data.exch;
-        devalInput.value = data.deval;
+        document.getElementById('currency-symbol').value = data.sym;
+        document.getElementById('base-exchange').value = data.exch;
+        document.getElementById('devaluation-rate').value = data.deval;
     }
     runCalculations();
 }
@@ -48,21 +42,16 @@ function runCalculations() {
     const treatyRate = { "India": 0.15, "Singapore": 0.30, "Dubai": 0.30, "UK": 0.00 }[country] || 0.30;
     const lumpPenalty = Math.round(balance * 0.1);
     const lumpTax = Math.round(balance * (treatyRate + stateTaxRate));
-    
-    document.getElementById('tax-percent-display').innerText = ((treatyRate + stateTaxRate) * 100).toFixed(1);
-    document.getElementById('lump-sum-penalty').innerText = "-$" + lumpPenalty.toLocaleString();
-    document.getElementById('lump-sum-taxes').innerText = "-$" + lumpTax.toLocaleString();
-    document.getElementById('lump-sum-final-net').innerText = "$" + (balance - lumpPenalty - lumpTax).toLocaleString();
+    const lumpNet = balance - lumpPenalty - lumpTax;
 
     const nper = LIFE_TABLE[startAge] || (82.0 - startAge);
     const annualSEPP = Math.round(calculatePMT(0.05, nper, balance));
-    document.getElementById('sepp-amount').innerText = "$" + annualSEPP.toLocaleString();
-
-    const tbody = document.querySelector('#adventure-table tbody');
-    tbody.innerHTML = '';
+    
     let currentBalance = balance;
     let totalTaxesPaid = 0;
     let totalWithdrawn = 0;
+    const tbody = document.querySelector('#adventure-table tbody');
+    tbody.innerHTML = '';
 
     for (let age = startAge; age <= 59; age++) {
         const growthAmt = Math.round(currentBalance * growthInput);
@@ -75,15 +64,19 @@ function runCalculations() {
         totalWithdrawn += annualSEPP;
 
         let localStatus = "Resident";
-        if (country === "India") localStatus = (age - startAge < 3) ? "RNOR" : "ROR";
+        let statusDesc = "Standard Tax Residency.";
+        if (country === "India") {
+            const isRNOR = (age - startAge < 3);
+            localStatus = isRNOR ? "RNOR" : "ROR";
+            statusDesc = isRNOR ? "Resident but Not Ordinarily Resident: Generally exempt from local tax on foreign income." : "Resident Ordinarily Resident: Worldwide income is taxable locally.";
+        }
 
-        // Local Currency logic using dynamic symbol and exchange/devaluation
         const currentExch = exchBase * Math.pow(1 + deval, age - startAge);
         const netMo = Math.round(((annualSEPP - taxPaidYearly) / 12) * currentExch);
 
         tbody.innerHTML += `<tr>
             <td>${2026 + (age - startAge)}</td><td>${age === 59 ? "59.5" : age}</td>
-            <td class="status-cell">${localStatus}</td>
+            <td class="status-cell" title="${statusDesc}">${localStatus}</td>
             <td>$${currentBalance.toLocaleString()}</td><td>$${growthAmt.toLocaleString()}</td>
             <td>$${annualSEPP.toLocaleString()}</td><td>${(totalTaxRate * 100).toFixed(1)}%</td>
             <td class="text-danger">$${taxPaidYearly.toLocaleString()}</td>
@@ -93,17 +86,27 @@ function runCalculations() {
         currentBalance = endYearBalance;
     }
 
-    // UPDATED SUMMARY: Include Net Withdrawn
+    const seppNet = totalWithdrawn - totalTaxesPaid;
+    document.getElementById('sepp-amount').innerText = "$" + annualSEPP.toLocaleString();
     document.getElementById('total-sepp-withdrawn').innerText = "$" + totalWithdrawn.toLocaleString();
     document.getElementById('total-sepp-taxes').innerText = "$" + totalTaxesPaid.toLocaleString();
-    document.getElementById('net-sepp-withdrawn').innerText = "$" + (totalWithdrawn - totalTaxesPaid).toLocaleString();
+    document.getElementById('net-sepp-withdrawn').innerText = "$" + seppNet.toLocaleString();
     document.getElementById('final-sepp-balance').innerText = "$" + currentBalance.toLocaleString();
-    document.getElementById('summary-penalty-saved').innerText = "$" + lumpPenalty.toLocaleString();
+    document.getElementById('lump-sum-penalty').innerText = "-$" + lumpPenalty.toLocaleString();
+    document.getElementById('lump-sum-taxes').innerText = "-$" + lumpTax.toLocaleString();
+    document.getElementById('lump-sum-final-net').innerText = "$" + lumpNet.toLocaleString();
+    document.getElementById('tax-percent-display').innerText = ((treatyRate + stateTaxRate) * 100).toFixed(1);
+
+    const maxVal = Math.max(lumpNet, seppNet);
+    document.getElementById('bar-lump').style.width = (lumpNet / maxVal * 100) + "%";
+    document.getElementById('bar-sepp').style.width = (seppNet / maxVal * 100) + "%";
+    document.getElementById('bar-lump-val').innerText = "$" + lumpNet.toLocaleString();
+    document.getElementById('bar-sepp-val').innerText = "$" + seppNet.toLocaleString();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('status').addEventListener('change', () => { toggleStateInputs(); runCalculations(); });
-    document.getElementById('country').addEventListener('change', updateDestinationDefaults); // AUTO-SWITCH SYMBOLS
+    document.getElementById('country').addEventListener('change', updateDestinationDefaults);
     document.getElementById('btn-calculate').addEventListener('click', runCalculations);
     toggleStateInputs();
     runCalculations();
