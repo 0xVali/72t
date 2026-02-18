@@ -290,3 +290,43 @@ th { background: #f9f9f9; font-weight: 600; color: #666; }
         grid-template-columns: 1fr;
     }
 }
+
+/* --- Mobile Adjustments (Applied only to screens smaller than 1024px) --- */
+@media (max-width: 1024px) {
+    /* 1. Stacks the Sidebar on top of the Results instead of side-by-side */
+    .dashboard {
+        flex-direction: column !important;
+    }
+
+    /* 2. Forces the Sidebar to take full width */
+    .sidebar {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    /* 3. Stacks the 3 Methodology Boxes (Amortization, Annuitization, RMD) vertically */
+    .methods-explanation {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 4. Stacks the 3 Summary Cards (Annual SEPP, Summary, Lump Sum) vertically */
+    .results-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 5. Shrinks the large hero numbers so they fit on a phone screen */
+    .hero-value {
+        font-size: 2.2rem !important;
+    }
+
+    /* 6. Enables horizontal swiping for the table so columns don't overlap */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 7. Keeps the table wide enough to be readable while swiping */
+    table {
+        min-width: 900px !important;
+    }
+}
