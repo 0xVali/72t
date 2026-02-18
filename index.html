@@ -1,55 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>72(t) Adventure Tool</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
-        <header>
-            <h1>72(t) SEPP Adventure Engine</h1>
-            <p>Compare retirement paths and forecast your global journey.</p>
-        </header>
-
         <div class="card intro-card">
             <h2>About the 72(t) Rule</h2>
-            <p>The <strong>IRS 72(t) rule</strong> allows you to take penalty-free early withdrawals from your IRA or 401(k) by establishing <strong>Substantially Equal Periodic Payments (SEPP)</strong>. You avoid the 10% penalty, but payments must continue for five years or until you reach age 59½, whichever is longer.</p>
-            <p><a href="https://www.irs.gov/retirement-plans/substantially-equal-periodic-payments" target="_blank" class="irs-link">Official IRS SEPP Guidance →</a></p>
+            <p>The <strong>IRS 72(t) rule</strong> allows penalty-free early withdrawals by establishing
+                <strong>Substantially Equal Periodic Payments (SEPP)</strong>. Payments must continue for five years or
+                until age 59½, whichever is longer. There are <strong>three methods</strong>:</p>
+
+            <div class="methods-explanation">
+                <div class="method-box">
+                    <h3>1. Fixed Amortization</h3>
+                    <ul>
+                        <li>Uses life expectancy + interest (up to 5%).</li>
+                        <li>Predictable fixed payments.</li>
+                    </ul>
+                </div>
+                <div class="method-box">
+                    <h3>2. Fixed Annuitization</h3>
+                    <ul>
+                        <li>Uses an annuity factor from IRS tables.</li>
+                        <li>Alternative stable annual income.</li>
+                    </ul>
+                </div>
+                <div class="method-box">
+                    <h3>3. RMD Method</h3>
+                    <ul>
+                        <li>Recalculated annually based on balance.</li>
+                        <li>Safest for portfolio longevity.</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="reference"><a href="https://www.irs.gov/retirement-plans/substantially-equal-periodic-payments"
+                    target="_blank">Official IRS SEPP Guidance →</a></p>
         </div>
 
         <div class="dashboard">
             <aside class="sidebar">
                 <section class="card">
                     <form id="calc-form">
-                        <h2>Core Financials</h2>
+                        <h3>Core Financials</h3>
                         <div class="input-group">
-                            <label for="balance">401(k) Balance ($) <span class="req">*</span></label>
+                            <label>72(t) Method <span class="req">*</span></label>
+                            <select id="method" required>
+                                <option value="amortization">Fixed Amortization</option>
+                                <option value="annuitization">Fixed Annuitization</option>
+                                <option value="rmd">RMD Method (Recalculated Yearly)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>401(k)/IRA Balance ($) <span class="req">*</span></label>
                             <input type="number" id="balance" min="0" required placeholder="e.g. 1000000">
                         </div>
                         <div class="input-group">
-                            <label for="age">Current Age <span class="req">*</span></label>
-                            <input type="number" id="age" min="0" required placeholder="e.g. 40">
+                            <label>Current Age <span class="req">*</span></label>
+                            <input type="number" id="age" min="18" max="59" required placeholder="e.g. 40">
                         </div>
                         <div class="input-group">
-                            <label for="status">Residency Status <span class="req">*</span></label>
+                            <label>Residency Status <span class="req">*</span></label>
                             <select id="status" required>
                                 <option value="" disabled selected>Select status</option>
                                 <option value="citizen">US Citizen / Resident</option>
                                 <option value="nra">Non-Resident Alien (NRA)</option>
                             </select>
                         </div>
-                        <div class="input-group" id="state-name-group">
-                            <label for="state-name">Home State</label>
-                            <input type="text" id="state-name" placeholder="e.g. California">
-                        </div>
-                        <div class="input-group" id="state-tax-group">
-                            <label for="state-tax">State Tax Rate (%)</label>
-                            <input type="number" id="state-tax" min="0" step="0.1" placeholder="0">
+                        <div class="input-group">
+                            <label>Home State</label>
+                            <select id="state-name">
+                                <option value="" selected>Select State</option>
+                                <optgroup label="No Income Tax">
+                                    <option value="AK" data-tax="0.0">Alaska</option>
+                                    <option value="FL" data-tax="0.0">Florida</option>
+                                    <option value="NV" data-tax="0.0">Nevada</option>
+                                    <option value="SD" data-tax="0.0">South Dakota</option>
+                                    <option value="TN" data-tax="0.0">Tennessee</option>
+                                    <option value="TX" data-tax="0.0">Texas</option>
+                                    <option value="WY" data-tax="0.0">Wyoming</option>
+                                    <option value="WA" data-tax="0.0">Washington</option>
+                                </optgroup>
+                                <optgroup label="Standard Tax States">
+                                    <option value="AL" data-tax="5.0">Alabama</option>
+                                    <option value="AZ" data-tax="2.5">Arizona</option>
+                                    <option value="AR" data-tax="4.4">Arkansas</option>
+                                    <option value="CA" data-tax="9.3">California</option>
+                                    <option value="CO" data-tax="4.4">Colorado</option>
+                                    <option value="CT" data-tax="6.99">Connecticut</option>
+                                    <option value="DE" data-tax="6.6">Delaware</option>
+                                    <option value="DC" data-tax="10.7">Dist. of Columbia</option>
+                                    <option value="GA" data-tax="5.5">Georgia</option>
+                                    <option value="HI" data-tax="11.0">Hawaii</option>
+                                    <option value="ID" data-tax="5.8">Idaho</option>
+                                    <option value="IL" data-tax="4.9">Illinois</option>
+                                    <option value="IN" data-tax="3.0">Indiana</option>
+                                    <option value="IA" data-tax="5.7">Iowa</option>
+                                    <option value="KS" data-tax="5.7">Kansas</option>
+                                    <option value="KY" data-tax="4.0">Kentucky</option>
+                                    <option value="LA" data-tax="4.2">Louisiana</option>
+                                    <option value="ME" data-tax="7.1">Maine</option>
+                                    <option value="MD" data-tax="5.7">Maryland</option>
+                                    <option value="MA" data-tax="5.0">Massachusetts</option>
+                                    <option value="MI" data-tax="4.2">Michigan</option>
+                                    <option value="MN" data-tax="9.8">Minnesota</option>
+                                    <option value="MS" data-tax="4.7">Mississippi</option>
+                                    <option value="MO" data-tax="4.8">Missouri</option>
+                                    <option value="MT" data-tax="5.9">Montana</option>
+                                    <option value="NE" data-tax="5.8">Nebraska</option>
+                                    <option value="NH" data-tax="3.0">New Hampshire</option>
+                                    <option value="NJ" data-tax="6.37">New Jersey</option>
+                                    <option value="NM" data-tax="5.9">New Mexico</option>
+                                    <option value="NY" data-tax="5.9">New York</option>
+                                    <option value="NC" data-tax="4.5">North Carolina</option>
+                                    <option value="ND" data-tax="2.5">North Dakota</option>
+                                    <option value="OH" data-tax="3.5">Ohio</option>
+                                    <option value="OK" data-tax="4.7">Oklahoma</option>
+                                    <option value="OR" data-tax="8.7">Oregon</option>
+                                    <option value="PA" data-tax="3.0">Pennsylvania</option>
+                                    <option value="RI" data-tax="5.9">Rhode Island</option>
+                                    <option value="SC" data-tax="6.4">South Carolina</option>
+                                    <option value="UT" data-tax="4.6">Utah</option>
+                                    <option value="VT" data-tax="8.7">Vermont</option>
+                                    <option value="VA" data-tax="5.7">Virginia</option>
+                                    <option value="WV" data-tax="5.1">West Virginia</option>
+                                    <option value="WI" data-tax="7.6">Wisconsin</option>
+                                </optgroup>
+                            </select>
                         </div>
                         <div class="input-group">
-                            <label for="country">Destination <span class="req">*</span></label>
+                            <label>State Tax Rate (%)</label>
+                            <input type="number" id="state-tax" min="0" step="0.1" value="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Destination <span class="req">*</span></label>
                             <select id="country" required>
                                 <option value="" disabled selected>Select country</option>
                                 <option value="India">India</option>
@@ -59,23 +148,23 @@
                             </select>
                         </div>
 
-                        <h2 style="font-size: 1rem; margin-top: 20px;">Assumptions</h2>
+                        <h3 class="section-title">Assumptions</h3>
                         <div class="input-grid">
                             <div class="input-group">
                                 <label>Growth % <span class="req">*</span></label>
-                                <input type="number" id="growth-rate" min="0" required placeholder="7">
+                                <input type="number" id="growth-rate" min="0" required>
                             </div>
                             <div class="input-group">
                                 <label>Currency <span class="req">*</span></label>
-                                <input type="text" id="currency-symbol" required placeholder="₹">
+                                <input type="text" id="currency-symbol" required>
                             </div>
                             <div class="input-group">
                                 <label>Exchange rate <span class="req">*</span></label>
-                                <input type="number" id="base-exchange" min="0" required placeholder="84.00">
+                                <input type="number" id="base-exchange" min="0" step="0.01" required>
                             </div>
                             <div class="input-group">
                                 <label>Devaluation rate % <span class="req">*</span></label>
-                                <input type="number" id="devaluation-rate" min="0" required placeholder="2">
+                                <input type="number" id="devaluation-rate" min="-10" required>
                             </div>
                         </div>
                         <button type="submit" class="btn-calculate">Update Everything</button>
@@ -85,39 +174,32 @@
 
             <section class="main-content" id="results-area" style="display: none;">
                 <div class="results-grid">
-                    <div class="card result-card highlight">
+                    <div class="card result-card">
                         <h3>Annual SEPP Payment</h3>
                         <p id="sepp-amount" class="hero-value">$0</p>
-                        <span class="sub-label">Amortization (5% Floor)</span>
+                        <span id="method-label" class="sub-label">...</span>
                     </div>
-                    
+
                     <div class="card summary-card">
                         <h3>SEPP Summary (to Age 59.5)</h3>
-                        <div class="stat"><span>Total Withdrawn:</span> <span id="total-sepp-withdrawn" class="stat-value">$0</span></div>
-                        <div class="stat"><span>Total Taxes Paid:</span> <span id="total-sepp-taxes" class="stat-value text-danger">$0</span></div>
-                        <div class="stat"><span>Net Withdrawn:</span> <span id="net-sepp-withdrawn" class="stat-value text-success">$0</span></div>
-                        <div class="stat"><span>Ending Balance:</span> <span id="final-sepp-balance" class="stat-value text-success">$0</span></div>
+                        <div class="stat"><span>Total Withdrawn:</span> <span id="total-sepp-withdrawn"
+                                class="stat-value">$0</span></div>
+                        <div class="stat"><span>Total Taxes Paid:</span> <span id="total-sepp-taxes"
+                                class="stat-value text-danger">$0</span></div>
+                        <div class="stat"><span>Net Withdrawn:</span> <span id="net-sepp-withdrawn"
+                                class="stat-value text-success">$0</span></div>
+                        <div class="stat"><span>Ending Balance:</span> <span id="final-sepp-balance"
+                                class="stat-value text-success">$0</span></div>
                     </div>
 
                     <div class="card summary-card danger-border">
-                        <h3>Lump Sum (Immediate)</h3>
-                        <div class="stat"><span>10% Penalty:</span> <span id="lump-sum-penalty" class="stat-value text-danger">$0</span></div>
-                        <div class="stat"><span>Taxes (<span id="tax-percent-display">0</span>%):</span> <span id="lump-sum-taxes" class="stat-value text-danger">$0</span></div>
-                        <div class="stat"><span>Final Net:</span> <span id="lump-sum-final-net" class="stat-value">$0</span></div>
-                    </div>
-                </div>
-
-                <div class="card chart-card">
-                    <h2>Wealth Comparison: Spendable Cash</h2>
-                    <div class="comparison-container">
-                        <div class="bar-group">
-                            <div class="bar-label">Lump Sum Net</div>
-                            <div class="bar-wrapper"><div id="bar-lump" class="bar danger-bg" style="width: 0%"></div><span id="bar-lump-val" class="bar-value">$0</span></div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar-label">SEPP Net Withdrawn</div>
-                            <div class="bar-wrapper"><div id="bar-sepp" class="bar success-bg" style="width: 0%"></div><span id="bar-sepp-val" class="bar-value">$0</span></div>
-                        </div>
+                        <h3>Lump Sum (1040-NR)</h3>
+                        <div class="stat"><span>10% Penalty:</span> <span id="lump-sum-penalty"
+                                class="stat-value text-danger">$0</span></div>
+                        <div class="stat"><span>Taxes (<span id="tax-percent-display">0</span>%):</span> <span
+                                id="lump-sum-taxes" class="stat-value text-danger">$0</span></div>
+                        <div class="stat"><span>Final Net:</span> <span id="lump-sum-final-net" class="stat-value"
+                                style="font-weight:bold">$0</span></div>
                     </div>
                 </div>
 
@@ -127,12 +209,21 @@
                         <table id="adventure-table">
                             <thead>
                                 <tr>
-                                    <th>Year</th><th>Age</th><th>Status</th><th>Start Balance</th><th>Growth</th>
-                                    <th>SEPP ($)</th><th>Tax %</th><th>Tax ($)</th><th>End Balance</th><th>Net (Mo)</th>
+                                    <th>Year</th>
+                                    <th>Age</th>
+                                    <th>Status</th>
+                                    <th>Start Balance</th>
+                                    <th>Growth</th>
+                                    <th>SEPP ($)</th>
+                                    <th>Tax %</th>
+                                    <th>Tax ($)</th>
+                                    <th>End Balance</th>
+                                    <th>Net (Mo)</th>
                                     <th></th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -141,4 +232,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

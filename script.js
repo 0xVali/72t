@@ -9,9 +9,9 @@ function updateDefaults() {
     const country = document.getElementById('country').value;
     const defaults = {
         "India": { sym: "₹", exch: 84.00, deval: 2, growth: 7 },
-        "Singapore": { sym: "S$", exch: 60, deval: 0, growth: 6 },
-        "Dubai": { sym: "AED", exch: 3, deval: 0, growth: 5 },
-        "UK": { sym: "£", exch: 1, deval: 0, growth: 6 }
+        "Singapore": { sym: "S$", exch: 1.30, deval: 0, growth: 6 },
+        "Dubai": { sym: "AED", exch: 3.60, deval: 0, growth: 5 },
+        "UK": { sym: "£", exch: 0.79, deval: 0, growth: 6 }
     };
     const data = defaults[country];
     if (data) {
@@ -24,12 +24,8 @@ function updateDefaults() {
 
 function runCalculations(e) {
     if (e) e.preventDefault();
-    
     const form = document.getElementById('calc-form');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
+    if (!form.checkValidity()) { form.reportValidity(); return; }
 
     const balance = Math.round(parseFloat(document.getElementById('balance').value));
     const startAge = parseInt(document.getElementById('age').value);
@@ -39,83 +35,151 @@ function runCalculations(e) {
     const status = document.getElementById('status').value;
     const country = document.getElementById('country').value;
     const sym = document.getElementById('currency-symbol').value;
-    const stateTaxRate = (status === 'citizen') ? (parseFloat(document.getElementById('state-tax').value) / 100 || 0) : 0;
+    const method = document.getElementById('method').value;
+    const stateTaxRate = parseFloat(document.getElementById('state-tax').value) / 100 || 0;
 
     document.getElementById('results-area').style.display = 'block';
 
+    // 1. Lump Sum Population Fix
     const treatyRate = { "India": 0.15, "Singapore": 0.30, "Dubai": 0.30, "UK": 0.00 }[country] || 0.30;
+    const totalLumpTaxRate = treatyRate + stateTaxRate;
     const lumpPenalty = Math.round(balance * 0.1);
-    const lumpTax = Math.round(balance * (treatyRate + stateTaxRate));
-    
-    const nper = LIFE_TABLE[startAge] || (82.0 - startAge);
-    const annualSEPP = Math.round(calculatePMT(0.05, nper, balance));
-    
+    const lumpTaxValue = Math.round(balance * totalLumpTaxRate);
+    const lumpNetValue = balance - lumpPenalty - lumpTaxValue;
+
+    document.getElementById('lump-sum-penalty').innerText = "-$" + lumpPenalty.toLocaleString();
+    document.getElementById('lump-sum-taxes').innerText = "-$" + lumpTaxValue.toLocaleString();
+    document.getElementById('lump-sum-final-net').innerText = "$" + lumpNetValue.toLocaleString();
+    document.getElementById('tax-percent-display').innerText = (totalLumpTaxRate * 100).toFixed(1);
+
+    // 2. SEPP Logic
+    const nperInit = LIFE_TABLE[startAge] || (82.0 - startAge);
+    let seppYearOne;
+
+    if (method === 'rmd') {
+        seppYearOne = Math.round(balance / nperInit);
+        document.getElementById('method-label').innerText = "RMD Method (Recalculated Yearly)";
+    } else if (method === 'annuitization') {
+        const factor = (1 - Math.pow(1 + 0.05, -nperInit)) / 0.05;
+        seppYearOne = Math.round(balance / factor);
+        document.getElementById('method-label').innerText = "Fixed Annuitization";
+    } else {
+        seppYearOne = Math.round(calculatePMT(0.05, nperInit, balance));
+        document.getElementById('method-label').innerText = "Fixed Amortization";
+    }
+
     let currentBalance = balance;
-    let totalTaxesPaid = 0;
     let totalWithdrawn = 0;
+    let totalTaxesPaid = 0;
     const tbody = document.querySelector('#adventure-table tbody');
     tbody.innerHTML = '';
 
-    for (let age = startAge; age <= 59; age++) {
-        const growthAmt = Math.round(currentBalance * growthInput);
-        const fedStep = (age - startAge < 3) ? 0.18 : 0.27;
-        const totalTaxRate = fedStep + stateTaxRate;
-        const taxPaidYearly = Math.round(annualSEPP * totalTaxRate);
-        const endYearBalance = currentBalance + growthAmt - annualSEPP;
-        
-        totalTaxesPaid += taxPaidYearly;
-        totalWithdrawn += annualSEPP;
+    // 3. Forecast Table
+for (let age = startAge; age <= 59; age++) {
+    const nperCurrent = LIFE_TABLE[age] || (82.0 - age);
+    const yearlySEPP = (method === 'rmd') ? Math.round(currentBalance / nperCurrent) : seppYearOne;
+    
+    // NEW RESIDENCY LOGIC START
+    let localStatus = "Resident"; 
+    let statusDesc = "Standard Tax Residency."; // This will be your hover text
+    const yearsElapsed = age - startAge;
 
-        let localStatus = "Resident";
-        let statusDesc = "Standard Residency.";
-        if (country === "India") {
-            const isRNOR = (age - startAge < 3);
+    switch (country) {
+        case "India":
+            const isRNOR = (yearsElapsed < 3);
             localStatus = isRNOR ? "RNOR" : "ROR";
-            statusDesc = isRNOR ? "RNOR: Foreign income usually exempt from local tax." : "ROR: Worldwide income taxable locally.";
-        }
-
+            statusDesc = isRNOR ? "Resident but Not Ordinarily Resident: Foreign income (401k) is generally not taxable in India." : "Resident Ordinarily Resident: Worldwide income is taxable in India.";
+            break;
+        case "Singapore":
+            localStatus = "Resident";
+            statusDesc = "Singapore Tax Resident: Foreign-sourced income received in Singapore is generally tax-exempt.";
+            break;
+        case "Dubai":
+            localStatus = "Resident";
+            statusDesc = "UAE Tax Resident: No personal income tax on foreign or local income.";
+            break;
+        case "UK":
+            const isNonDom = (yearsElapsed < 7);
+            localStatus = isNonDom ? "Non-Dom" : "Resident";
+            statusDesc = isNonDom ? "Remittance Basis: Only foreign income brought into the UK is taxed." : "Arising Basis: Worldwide income is subject to UK tax.";
+            break;
+        default:
+            localStatus = "Resident";
+            statusDesc = "Standard Residency Status.";
+    }
+    // NEW RESIDENCY LOGIC END
+        const growthAmt = Math.round(currentBalance * growthInput);
+        const fedRate = (age - startAge < 3 ? 0.18 : 0.27);
+        const taxRate = fedRate + stateTaxRate;
+        const taxYearly = Math.round(yearlySEPP * taxRate);
+        const endBal = currentBalance + growthAmt - yearlySEPP;
         const currentExch = exchBase * Math.pow(1 + deval, age - startAge);
-        const netMo = Math.round(((annualSEPP - taxPaidYearly) / 12) * currentExch);
+        const netMo = Math.round(((yearlySEPP - taxYearly) / 12) * currentExch);
 
-        tbody.innerHTML += `<tr>
-            <td>${2026 + (age - startAge)}</td><td>${age === 59 ? "59.5" : age}</td>
-            <td class="status-cell" title="${statusDesc}">${localStatus}</td>
-            <td>$${currentBalance.toLocaleString()}</td><td>$${growthAmt.toLocaleString()}</td>
-            <td>$${annualSEPP.toLocaleString()}</td><td>${(totalTaxRate * 100).toFixed(1)}%</td>
-            <td class="text-danger">$${taxPaidYearly.toLocaleString()}</td>
-            <td>$${endYearBalance.toLocaleString()}</td><td>${sym}${netMo.toLocaleString()}</td>
-            <td></td>
-        </tr>`;
-        currentBalance = endYearBalance;
+// Updated Table Row Injection in Section 3
+tbody.innerHTML += `<tr>
+    <td>${2026+yearsElapsed}</td>
+    <td>${age===59?"59.5":age}</td>
+    <td style="text-align: left;">
+        <div class="tooltip">${localStatus}
+            <span class="tooltiptext">${statusDesc}</span>
+        </div>
+    <td>$${currentBalance.toLocaleString()}</td>
+    <td>$${growthAmt.toLocaleString()}</td>
+    <td>$${yearlySEPP.toLocaleString()}</td>
+    <td>${(taxRate*100).toFixed(1)}%</td>
+    <td class="text-danger">$${taxYearly.toLocaleString()}</td>
+    <td style="color:var(--success); font-weight:bold;">$${endBal.toLocaleString()}</td>
+    <td>${sym}${netMo.toLocaleString()}</td>
+    <td></td>
+</tr>`;
+        
+        totalWithdrawn += yearlySEPP;
+        totalTaxesPaid += taxYearly;
+        currentBalance = endBal;
     }
 
-    const seppNet = totalWithdrawn - totalTaxesPaid;
-    const lumpNet = balance - lumpPenalty - lumpTax;
-
-    document.getElementById('sepp-amount').innerText = "$" + annualSEPP.toLocaleString();
+    // 4. SEPP Summary Card
+    document.getElementById('sepp-amount').innerText = "$" + seppYearOne.toLocaleString();
     document.getElementById('total-sepp-withdrawn').innerText = "$" + totalWithdrawn.toLocaleString();
     document.getElementById('total-sepp-taxes').innerText = "$" + totalTaxesPaid.toLocaleString();
-    document.getElementById('net-sepp-withdrawn').innerText = "$" + seppNet.toLocaleString();
+    document.getElementById('net-sepp-withdrawn').innerText = "$" + (totalWithdrawn - totalTaxesPaid).toLocaleString();
     document.getElementById('final-sepp-balance').innerText = "$" + currentBalance.toLocaleString();
-    
-    document.getElementById('lump-sum-penalty').innerText = "-$" + lumpPenalty.toLocaleString();
-    document.getElementById('lump-sum-taxes').innerText = "-$" + lumpTax.toLocaleString();
-    document.getElementById('lump-sum-final-net').innerText = "$" + lumpNet.toLocaleString();
-    document.getElementById('tax-percent-display').innerText = ((treatyRate + stateTaxRate) * 100).toFixed(1);
-
-    const maxVal = Math.max(lumpNet, seppNet);
-    document.getElementById('bar-lump').style.width = (lumpNet / maxVal * 100) + "%";
-    document.getElementById('bar-sepp').style.width = (seppNet / maxVal * 100) + "%";
-    document.getElementById('bar-lump-val').innerText = "$" + lumpNet.toLocaleString();
-    document.getElementById('bar-sepp-val').innerText = "$" + seppNet.toLocaleString();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Existing submit and country change listeners
     document.getElementById('calc-form').addEventListener('submit', runCalculations);
     document.getElementById('country').addEventListener('change', updateDefaults);
-    document.getElementById('status').addEventListener('change', () => {
-        const status = document.getElementById('status').value;
-        const groups = [document.getElementById('state-name-group'), document.getElementById('state-tax-group')];
-        groups.forEach(g => status === 'nra' ? g.classList.add('disabled') : g.classList.remove('disabled'));
+
+    const statusSelect = document.getElementById('status');
+    const stateSelect = document.getElementById('state-name');
+    const stateTaxInput = document.getElementById('state-tax');
+
+    // 1. Auto-populate State Tax based on selection
+    stateSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const taxRate = selectedOption.getAttribute('data-tax');
+        
+        if (taxRate !== null) {
+            stateTaxInput.value = taxRate;
+        }
+    });
+
+    // 2. Updated NRA Logic to handle both fields
+    statusSelect.addEventListener('change', function() {
+        const isNRA = (this.value === 'nra');
+        const stateNameGroup = stateSelect.closest('.input-group');
+        const stateTaxGroup = stateTaxInput.closest('.input-group');
+
+        if (isNRA) {
+            stateNameGroup.classList.add('disabled');
+            stateTaxGroup.classList.add('disabled');
+            stateSelect.value = "";
+            stateTaxInput.value = 0;
+        } else {
+            stateNameGroup.classList.remove('disabled');
+            stateTaxGroup.classList.remove('disabled');
+        }
     });
 });
