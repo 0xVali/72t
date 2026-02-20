@@ -370,6 +370,22 @@ th {
     opacity: 1;
 }
 
+.hero-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 25px;
+    font-weight: 500;
+}
+
+.story-snippet {
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* --- Responsive Adjustments --- */
 @media (max-width: 1200px) {
     .dashboard {
